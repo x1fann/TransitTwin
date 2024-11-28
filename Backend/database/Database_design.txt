@@ -1,0 +1,9 @@
++----------------+--------+     +---------------+--------+
+| StaticInfo     |        |     | DynamicInfo   |        |
+|----------------|--------|     |---------------|--------|
+| ComponentID    | PK     |<----| ComponentID   | FK, PK |
+| MaterialType   |        |     | Timestamp     | PK     |
+| OtherAttributes|        |     | Acceleration  |        |
+| ...            |        |     | Temperature   |        |
+|                |        |     | ...           |        |
++----------------+--------+     +---------------+--------+

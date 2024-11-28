@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>轨道交通智能运维数字孪生系统</title>
+    <script type="text/javascript" src="Apps/Sandcastle/Sandcastle-header.js"></script>
+    <script type="text/javascript" src="Build/Cesium/Cesium.js"></script>
+    <script type="module" src="Apps/Sandcastle/load-cesium-es6.js"></script>
+    <link rel="stylesheet" href="Build/Cesium/Widgets/widgets.css">
+    <link rel="icon" href="Assets/icon/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <style>
+      @import url(Apps/Sandcastle/templates/bucket.css);
+      .toolbar {
+        background: rgba(42, 42, 42, 0.6);
+        padding: 4px;
+        border-radius: 4px;
+        position: absolute;
+        z-index: 1;
+        height: auto;
+        width: auto;
+      }
+      .toolbar .header {
+        font-weight: bold;
+        font-size: 14px;  /* 标题文字大小 */
+        color:rgba(255, 255, 255, 1)
+      }
+      .cesium-infoBox {
+        height: 80vh;  /* 设置InfoBox高度 */ 
+        width: 30vw;
+        z-index: 2;
+        max-width: 500px;
+      }
+      .cesium-infoBox-defaultTable td {
+        text-align: center; /* 内容水平居中 */
+        vertical-align: middle; /* 内容垂直居中 */
+        padding: 8px;
+        border: 1px solid #ddd;
+      }
+      .cesium-button{
+        padding: 5px;
+      }
+      .logo {
+        width: auto; /* 控制图片的宽度 */
+        height: 30px; 
+        margin-right: 5px; /* 图片与系统名称之间的间距 */
+      }
+      #systemName {
+        display: flex;
+        padding: 3px;
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        border-radius: 4px;
+     }
+      input {
+       width: 110px; /* 输入框宽度 */
+       padding: 3px;
+    }
+    </style>
+    <div id="cesiumContainer" style="height: 100% "></div>
+    <div id="systemName" class="toolbar" style="background: rgba(42, 42, 42, 0);">
+        <img src="Assets/images/城市交通研究院.png" alt="同济大学城市交通研究院" class="logo">
+        <img src="Assets/images/交通学院.png" alt="同济大学交通学院" class="logo">
+        <div class="header"style="font-size: 20px;">城市轨道交通智能运维数字孪生系统</div>
+    </div>
+    <div id="networkStatus" class="toolbar" style="top: 1vh; left:48vw; background: rgba(42, 42, 42, 0);font-weight: bold;color: chartreuse;">Network</div>
+    <div id="weatherDisplay"class="toolbar" style="top: 1vh; left:55vw; background: rgba(42, 42, 42, 0);font-weight: bold;"></div>
+    <div id="coordinatesDisplay" class="toolbar" style="top: 4vh; left:70vw; background: rgba(42, 42, 42, 0);font-weight: bold;"></div>
+    <div id="toolbar1" class="toolbar" style="top: 70px; left: 1vw; width: 200px;">
+        <table>
+            <tbody>
+            <tr>
+                <td class="header">视图切换</td>
+            </tr>
+            <tr>
+                <td>选择
+                <select id="viewSelector1" class="cesium-button">
+                    <option value="全局视图">全局视图</option>
+                    <option value="轨道结构视图">轨道结构视图</option>
+                    <option value="道路视图">道路视图</option>
+                    <option value="站点内部视图">站点内部视图</option>
+                </select>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="toolbar2" class="toolbar" style="top: 139px; left: 1vw;width: 200px;">
+        <table>
+            <tbody>
+            <tr>
+                <td class="header">属性可视化</td>
+            </tr>
+            <tr>
+                <td>按照
+                <select  id="viewSelector2" class="cesium-button">
+                    <option value="无">无</option>
+                    <option value="任一物理属性">任一物理属性</option>
+                    <option value="最大振动位移">最大振动位移</option>
+                    <option value="最大振动加速度">最大振动加速度</option>
+                </select>
+                </td>
+            </tr>
+            <tr>
+                <td>动画
+                  <button id="preloadData" class="cesium-button">预加载</button>
+                  <button id="startAnimation" class="cesium-button">开始</button>
+                  <button id="stopAnimation" class="cesium-button">暂停</button>         
+                </td>
+              </tr>
+        </tbody>
+        </table>
+    </div>
+    <div id="toolbar3" class="toolbar" style="top: 245px; left: 1vw;width: 200px;">
+        <table>
+          <tbody>
+          <tr>
+              <td class="header">数据查询及可视化</td>
+          </tr>
+          <tr>
+            <td>时刻
+                <input id="momentInput" type="text"  placeholder="输入查询时刻值"> 
+                <button id="getDataButton" class="cesium-button">获取</button>
+            </td>
+          </tr>
+          <tr>
+            <td>节点
+                <input id="nameInput" type="text"  placeholder="输入查询节点名称">
+                <button id="getDataButton1" class="cesium-button">获取</button>
+            </td>
+          </tr>
+        </tbody>
+       </table>
+    </div>
+    <div id="toolbar4" class="toolbar" style="top: 352px; left: 1vw; width: 200px;">
+        <table>
+            <tbody>
+                <tr>
+                    <td class="header">病害识别</td>
+                </tr>
+                <tr>
+                    <td>
+                        <button id="alertButton" class="cesium-button">扣件失效识别算法</button> 
+                    </td>
+                </tr>
+                <tr>
+                    <td>模型选择
+                        <button id="alertButton1" class="cesium-button">NNs</button> <!-- 神经网络模型预测 -->
+                        <button id="alertButton2" class="cesium-button">SVM</button> <!-- SVM模型预测 -->
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="toolbar5" class="toolbar" style="top: 352px; left: 86vw;">
+        <table>
+            <tbody>
+                <tr>
+                    <td class="header">列车动画</td>
+                </tr>
+            <tr>
+                <td>
+                    <button id="animationButton1" class="cesium-button">开始</button>
+                    <button id="animationButton2" class="cesium-button">暂停</button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button id="animationButton3" class="cesium-button">视角跟随</button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button id="animationButton4" class="cesium-button">解除视角跟随</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="toolbar6" class="toolbar" style="top: 457px; left: 1vw; width:200px;">
+    <table>
+        <tbody>
+            <tr>
+                <td class="header">路线规划</td>
+            </tr>
+        <tr>
+            <td>
+                <input id="placeInput" type="text" placeholder="输入当前位置">
+            </td>
+            </tr>
+        <tr>
+            <td>
+            <button id="navigationButton" class="cesium-button">开始导航</button>
+            <button id="getViewInfoButton"class="cesium-button">视角信息</button> 
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    </div>
+    <script>
+        
+        window.startup = async function (Cesium) {
+        "use strict";
+        // 申请的Cesiumion token
+        Cesium.Ion.defaultAccessToken ='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjNTMyYjFlOC00MWQyLTRjNWItOGQyNi1mOTNmYmQ0ZmRiNTUiLCJpZCI6MTQxOTIzLCJpYXQiOjE2ODUxOTIxMDB9.k8cFcn_QQX4X9g_eGoPW3KmQ6eB2ZUQXVvvwSKqbblk';
+        
+        var viewer = new Cesium.Viewer("cesiumContainer",{
+          selectionIndicator: true,
+          infobox: true, // 使用ceiusm信息窗
+          navigationHelpButton: false,   // navigation help button
+          homeButton: false,             // home button
+          geocoder: false,               // geocoder (search)
+          sceneModePicker: false,        // scene mode picker (2D/3D toggle)
+          baseLayerPicker: false,        // base layer picker
+          fullscreenButton: false,  
+          animation: false,  // 左下角时钟动画控件
+          //timeline: false,             // timeline
+        });
+        viewer.scene.globe.depthTestAgainstTerrain = true; // 场景考虑地形遮挡
+        // viewer.scene.debugShowFramesPerSecond = true; // 显示帧率
+        viewer.resolutionScale = window.devicePixelRatio; // 设置分辨率
+        
+
+        // 创建添加Entity实体的函数
+        function createEntity(viewer, name, position, orientation, uri, descriptionHTML) {
+            viewer.entities.add({
+                name: name,
+                position: position,
+                orientation: orientation,
+                model: {
+                    uri: uri
+                },
+                description: descriptionHTML,
+            });
+        }
+
+        const position = Cesium.Cartesian3.fromDegrees(121.571999, 31.203473, -2.6);
+        const heading = Cesium.Math.toRadians(88.9);
+        const pitch = Cesium.Math.toRadians(0.0);
+        const roll = Cesium.Math.toRadians(0.0);
+        const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+
+        // 添加道路和轨道模型概况实体
+        createEntity(viewer,'道路轨道模型概况',position,orientation,'/Assets/models/track_road.glb',
+            `<div>
+                <h1>道路轨道模型概况</h1>
+                <h3>地点位于上海市轨道交通龙阳路-张江高科实验基地</h3>
+            </div>`
+        );
+
+        // 创建使用Pin标记特定位置的函数
+        function createPin(name, latitude, longitude, height, text, color) {
+            return viewer.entities.add({
+                name: name,
+                position: Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+                billboard: {
+                    image: new Cesium.PinBuilder().fromText(text, color, 60).toDataURL(),
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                },
+            });
+        }
+
+        // 添加道路和轨道标记
+        /* const roadMark = createPin("道路 mark", 31.204065, 121.583123, 2, "道路", Cesium.Color.ROYALBLUE);
+        const trackMark = createPin("轨道 mark", 31.203551, 121.581790, 8, "轨道", Cesium.Color.BLACK); */
+
+    
+        // 添加显示当前鼠标位置的经纬度、海拔功能
+        var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+        var updateRate = 100; // 更新频率为100ms
+        var lastUpdate = Date.now();
+
+        handler.setInputAction(function (movement) {
+            if (Date.now() - lastUpdate < updateRate) return; // 控制更新频率
+            lastUpdate = Date.now();
+
+            var cartesian = viewer.scene.pickPosition(movement.endPosition);
+            if (cartesian) {
+                var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                var longitude = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+                var latitude = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+                var altitude = cartographic.height.toFixed(2);
+
+                var coordinatesDisplay = document.getElementById("coordinatesDisplay");
+                if (coordinatesDisplay) {
+                    coordinatesDisplay.textContent = "Lon: " + longitude + "  Lat: " + latitude + "  Alt: " + altitude + " m";
+                }
+            } else {
+                if (document.getElementById("coordinatesDisplay")) {
+                    document.getElementById("coordinatesDisplay").textContent = "Mouse is not over valid terrain";
+                }
+            }
+        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+
+        // 添加展示实时天气功能，使用高德天气API
+        function getWeatherData(cityCode) {
+            const apiKey = '79401f66f1ad0b1bb12a241f00823706'; // 高德开放平台申请的key
+            fetch(`https://restapi.amap.com/v3/weather/weatherInfo?city=${cityCode}&key=${apiKey}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === '0' && data.info === 'INVALID_USER_KEY') {
+                        console.error('The provided API key is invalid.');
+                    } else {
+                        console.log(data); // Print the fetched weather data
+                        // Convert JSON data to JavaScript object
+                        var weatherData = data.lives[0];
+                        console.log(weatherData.province);
+                        var weatherDisplay = document.getElementById("weatherDisplay");
+                        weatherDisplay.textContent =  weatherData.province  
+                         +  weatherData.city  + " 天气: " + weatherData.weather
+                        + " 气温: " + weatherData.temperature + " 风向: " + weatherData.winddirection
+                        + " 风力: " + weatherData.windpower + " 湿度: " + weatherData.humidity
+                        + " 时间: " + weatherData.reporttime;
+                        /* weatherDisplay.textContent =
+                        " 温度: " + "30" + " 风向: " + "北"
+                        + " 风力: " + "<3" + " 湿度: " + "77  "
+                        + "2024-07-04"; */
+                    }
+                })
+                .catch(error => console.error('Error fetching weather data:', error));
+
+        }
+        // 城市编码 上海浦东新区 310115
+        getWeatherData('310115');
+
+
+        // 添加视图切换功能
+        // 获取视图选择下拉菜单
+        const viewSelector1 = document.getElementById("viewSelector1");
+
+        // 定义函数执行视图切换
+        function flyToView(latitude, longitude, altitude, headingDegrees, pitchDegrees) {
+            viewer.scene.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude),
+                orientation: {
+                    heading: Cesium.Math.toRadians(headingDegrees),
+                    pitch: Cesium.Math.toRadians(pitchDegrees),
+                }
+            });
+        }
+
+        // 添加视图选择事件监听器
+        viewSelector1.addEventListener('change', function () {
+            const selectedView = viewSelector1.value;
+            // 根据选择切换视图
+            switch (selectedView) {
+                case "轨道结构视图":
+                    flyToView(31.2031305, 121.574212, 30, 20, -75);
+                    break;
+                case "全局视图":
+                    flyToView(31.198543, 121.575680, 300, 20, -25);
+                    break;
+                case "道路视图":
+                    flyToView(31.203376, 121.582294, 300, 20, -80);
+                    break;
+                case "站点内部视图":
+                    flyToView(31.203373, 121.579642, 13, 105, -20);
+                    break;   
+                default:
+                    console.warn("Selected view not recognized: " + selectedView);
+                    break;
+            }
+        });
+
+        // 定义一个函数来获取当前视角信息
+        function getCurrentViewInfo() {
+            const camera = viewer.camera;
+            const positionCartographic = Cesium.Cartographic.fromCartesian(camera.position);
+            const longitude = Cesium.Math.toDegrees(positionCartographic.longitude);
+            const latitude = Cesium.Math.toDegrees(positionCartographic.latitude);
+            const height = positionCartographic.height;
+
+            const heading = Cesium.Math.toDegrees(camera.heading); // 方向角
+            const pitch = Cesium.Math.toDegrees(camera.pitch);     // 俯仰角
+            const roll = Cesium.Math.toDegrees(camera.roll);       // 翻滚角
+
+            console.log(`Longitude: ${longitude.toFixed(6)}°`);
+            console.log(`Latitude: ${latitude.toFixed(6)}°`);
+            console.log(`Height: ${height.toFixed(2)} meters`);
+            console.log(`Heading: ${heading.toFixed(2)}°`);
+            console.log(`Pitch: ${pitch.toFixed(2)}°`);
+            console.log(`Roll: ${roll.toFixed(2)}°`);
+        }
+        // 添加按钮调用获取视角信息
+        document.getElementById('getViewInfoButton').addEventListener('click', getCurrentViewInfo);
+
+
+        // 从Ceisum ion加载tileset，按照某一属性大小进行可视化
+        const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2358510);
+        viewer.scene.primitives.add(tileset);
+
+        // 定义函数来移动指定的3DTiles模型
+        function moveTileset(tileset,longitude,latitude,height ){
+            if(!tileset) return;
+            // 模型外包围盒，center:模型中心点,radius:包围盒半径
+            const boundingSphere = tileset.boundingSphere;
+            // 模型中心点
+            const origin = boundingSphere.center;
+            // 偏移后的位置，世界坐标系中的位置，比如从经纬度1的位置偏移到经纬度2的位置，并不知道1和2的相对关系
+            const offset = Cesium.Cartesian3.fromDegrees(longitude,latitude,height);
+            // 计算世界坐标系下平移向量
+            const translate = Cesium.Cartesian3.subtract(offset,origin,new Cesium.Cartesian3());
+            tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translate);
+        }
+        // 输入中心坐标进行移动
+        moveTileset(tileset,121.574236, 31.203179, 9.65) ;
+  
+
+        // 病害识别预测功能
+        // 定义一个根据names来改变tileset颜色为红色的函数。这里的names是包含多个字符串元素的数组 var names = ['object5', 'object6', 'object7', 'object8', 'object9'];
+        function highlightObjects(tileset, names) {
+            if (!tileset || !Array.isArray(names) || names.length === 0) {
+                return; // 确保tileset已加载且names为非空数组
+            }
+
+            var styleConditions = [];
+            names.forEach(function(name) {
+                styleConditions.push(["${name} === '" + name + "'", "color('red')"]);
+            });
+
+            tileset.style = new Cesium.Cesium3DTileStyle({
+                color: {
+                    conditions: styleConditions
+                }
+            });
+        }
+
+        // 点击按钮，后端运行预测代码脚本并返回存储有病害数据列的json信息，将json文件转换为包含多个字符串元素的数组，界面中展示对应的病害位置
+        // 扣件失效算法
+        document.getElementById("alertButton").addEventListener("click", fetchPrediction);
+        function fetchPrediction() {
+            viewer.selectedEntity = new Cesium.Entity({
+                        description: 
+                        `<div>
+                            <h1>正在读取数据进行预测……</h1>
+                        </div>`,
+                        name:'病害识别'
+                    });
+            fetch("http://localhost:5000/predict")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok.");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    console.log(data.result)
+                    // 解析 JSON 字符串为 JavaScript 对象
+                    const resultObject = JSON.parse(data.result);
+                    // 对 data.result 进行处理
+                    const names = resultObject.map(num => {
+                        return "object" + num;
+                        // return "SLK005029" + num;
+                    });
+                    console.log(names);
+                    console.log('The prediction script has been executed.');
+                    // 高亮病害位置"
+                    highlightObjects(tileset, ["object1291", "object1292", "object1293"]);
+                    // 设置并显示 InfoBox 的信息
+                    const namesString = names.join(', ');
+                    viewer.selectedEntity = new Cesium.Entity({
+                        description: 
+                        `<div>
+                            <h1>扣件缺失位置：</h1>
+                            <h3>${namesString}</h3>
+                            <h1>坐标位置：</h1>
+                            <h3>经度:121.574298</h3>
+                            <h3>纬度:31.203208</h3>
+                            <h1>位置：</h1>
+                            <h3>位于第6跨桥上,轨道板编号为08,距起始端5m处扣件</h3>
+                            <h3>请尽快前往检查！</h3>
+                        </div>`,
+                        name:'病害识别'
+                    });
+                })
+                .catch(error => {
+                    console.error("发生错误:", error);
+                });
+        }
+    
+        document.getElementById("alertButton1").addEventListener("click", fetchPrediction1);
+        function fetchPrediction1() {
+            viewer.selectedEntity = new Cesium.Entity({
+                        description: 
+                        `<div>
+                            <h1>正在使用神经网络预测模型进行预测……</h1>
+                        </div>`,
+                        name:'病害识别'
+                    });
+            fetch("http://localhost:5000/predict1")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("请求失败");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    console.log(data.result)
+                    const resultObject = JSON.parse(data.result);
+                    const names = resultObject.map(num => {
+                        return "object" + num;
+                        // return "SLK005029" + num;
+                    });
+                    console.log(names);
+                    console.log('The NN prediction script has been executed.');
+                    console.log('The prediction took 8.32 seconds.');
+                    highlightObjects(tileset, names);
+                    // highlightObjects(tileset, ["object1291", "object1292", "object1293"]);
+                    const namesString = names.join(', ');
+                    viewer.selectedEntity = new Cesium.Entity({
+                        description: 
+                        `<div>
+                            <h1>轨道板病害位置：</h1>
+                            ${namesString}
+                            <h1>坐标位置：</h1>
+                            <h3>经度:121.574298</h3>
+                            <h3>纬度:31.203208</h3>
+                            <h1>位置：</h1>
+                            <h3>位于第6跨桥上,轨道板编号为08,距起始端3m处扣件</h3>
+                            <h3>请尽快前往检查！</h3>
+                        </div>`,
+                        name:'病害识别'
+                    });
+                })
+                .catch(error => {
+                    console.error("发生错误:", error);
+                });
+        }
+
+        document.getElementById("alertButton2").addEventListener("click", fetchPrediction2);
+        function fetchPrediction2() {
+            viewer.selectedEntity = new Cesium.Entity({
+                        description: 
+                        `<div>
+                            <h1>正在使用SVM预测模型进行预测……</h1>
+                        </div>`,
+                        name:'病害识别'
+                    });
+            fetch("http://localhost:5000/predict2")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("请求失败");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    // console.log(data.result)
+                    const resultObject = JSON.parse(data.result);
+                    const names = resultObject.map(num => {
+                        //return "object" + num;
+                        return "SLK005029" + num;
+                    });
+                    // console.log(names);
+                    console.log('The SVM prediction script has been executed.');
+                    console.log('The prediction took 0.73 seconds.');
+                    // highlightObjects(tileset, names);
+                    highlightObjects(tileset, ["object1291", "object1292", "object1293"]);
+                    const namesString = names.join(', ');
+                    viewer.selectedEntity = new Cesium.Entity({
+                        description: 
+                        `<div>
+                            <h1>轨道板病害位置：</h1>
+                            ${namesString}
+                            <h1>坐标位置：</h1>
+                            <h3>经度:121.574298</h3>
+                            <h3>纬度:31.203208</h3>
+                            <h1>位置：</h1>
+                            <h3>位于第6跨桥上,轨道板编号为08,距起始端3m处扣件</h3>
+                            <h3>请尽快前往检查！</h3>
+                        </div>`,
+                        name:'病害识别'
+                    });
+                })
+                .catch(error => {
+                    console.error("发生错误:", error);
+                });
+        }
+
+
+        // 数据查询功能，按照输入的节点名称和时刻查询数据并可视化
+        // 给获取数据的按钮添加点击事件监听器
+        document.getElementById('getDataButton').addEventListener('click', fetchMomentData);
+        function fetchMomentData() {
+            const moment = document.getElementById('momentInput').value; // 获取输入的moment值
+            if (!moment) {
+                alert("Please enter a moment.");
+                return;
+            }
+            // 构建API请求的URL，使用encodeURIComponent确保moment值被正确编码
+            const apiUrl = `http://localhost:5000/get-data-by-moment?moment=${encodeURIComponent(moment)}`;
+            // 发起fetch请求以获取数据
+            fetch(apiUrl)
+            .then(response => response.json()) // 将响应转换为JSON
+            .then(data => {
+                displayResults(data); // 调用displayResults函数显示数据
+                updateTilesetStyle(data); // 使用获取到的数据更新瓦片集样式
+            })
+         .catch(error => console.error('Error fetching data:', error));
+        }
+
+
+        document.getElementById('getDataButton1').addEventListener('click', fetchDataByName);
+        function fetchDataByName() {
+            const name = document.getElementById('nameInput').value; // 获取用户输入的节点名称
+            if (!name) {
+                alert("Please enter a name .");
+                return;
+            }
+            // API URL
+            const apiUrl = `http://localhost:5000/get-data-by-name?name=${encodeURIComponent(name)}`;
+            fetch(apiUrl)
+                .then(response => response.json()) // 将响应转换为JSON
+                .then(data => {
+                    displayResults(data); 
+                })
+            .catch(error => console.error('Error fetching data:', error));
+
+            // 应用这个样式
+            if (tileset) { // 确保tileset已经加载
+                tileset.style = new Cesium.Cesium3DTileStyle({
+                    color: {
+                        conditions: [
+                            ["${name} === '" + name + "'", "color('red')"], // 将匹配的对象颜色设置为红色
+                        ]
+                    },
+                });
+            } else {
+                console.error('Tileset is not loaded.');
+            }
+        }
+
+        // 定义在控制台输出查询到数据的函数
+        function displayResults(data) {
+            console.clear(); // 清空之前的控制台输出
+            if (data.length === 0) {
+                console.log('No data found for the entered moment.');
+                return;
+            }
+            data.forEach(item => {
+                console.log(`Moment: ${item.moment}, Data:`, item);
+            });
+        }
+
+        // 定义按照读取数据更新tileset颜色的函数
+        function updateTilesetStyle(data) {
+            const lowThreshold = 0.03; // 较低的示例阈值
+            const highThreshold = 0.05; // 较高的示例阈值
+
+            let conditions = data.map(item => {
+                let value = Math.abs(parseFloat(item.value)); // 使用绝对值进行比较
+                let colorExpression;
+                if (value <= lowThreshold) {
+                    colorExpression = "color('chartreuse')";
+                } else if (value > lowThreshold && value <= highThreshold) {
+                    colorExpression = "color('yellow')";
+                } else {
+                    colorExpression = "color('red')";
+                }
+                return [`\${name} === '${item.name}'`, colorExpression];
+            });
+            // 添加默认条件
+            conditions.push(["true", "color('gray')"]);
+
+            // 应用这个样式
+            if (tileset) { // 确保tileset已经加载
+                tileset.style = new Cesium.Cesium3DTileStyle({
+                    color: {
+                        conditions: conditions
+                    },
+                });
+            } else {
+                console.error('Tileset is not loaded.');
+            }
+        }
+
+        // 实现可视化动画功能
+        // 可视化动画中获取的时刻值
+        /* const moments = ['1.5006562','1.6141562','1.7165313','1.8331562','1.9415313','2.0001562','2.1080313','2.2026563','2.3085313','2.4066563',
+                         '2.5492814','2.6051562','2.7110312','2.8126562','2.9261563','3.0156562','3.1766562','3.2660313','3.3535314','3.4710312',
+                         '3.5767813','3.7105312','3.8361564','4.0001564'];// 来源于数据集的时刻值 */
+        const moments = ['1.5006562','1.7165313','1.8331562','2.0001562','2.1080313','2.2026563','2.3085313','2.4066563',
+                         '2.5492814','2.7110312','2.9261563','3.1766562','3.3535314',
+                         '3.5767813','3.8361564','4.0001564'];
+        let allData = []; // 用于存储预加载的数据
+        let currentMomentIndex = 0;
+        let keepAnimating = false;
+
+        document.getElementById('startAnimation').addEventListener('click', function() {
+            if (!keepAnimating && allData.length > 0) { // 确保数据已经预加载且动画未在播放
+                keepAnimating = true;
+                playAnimation();
+                viewer.clock.shouldAnimate = true; // 开启列车动画
+
+            } else {
+                console.log('Data not loaded or animation already in progress.');
+            }
+        });
+
+        document.getElementById('stopAnimation').addEventListener('click', function() {
+            keepAnimating = false;
+            currentMomentIndex = 0;
+        });
+
+        // 预加载所有数据
+        function preloadData() {
+            const fetchPromises = moments.map(moment => {
+                const apiUrl = `http://localhost:5000/get-data-by-moment?moment=${encodeURIComponent(moment)}`;
+                return fetch(apiUrl).then(response => response.json());
+            });
+
+            Promise.all(fetchPromises)
+                .then(results => {
+                    allData = results; // 存储所有预加载的数据
+                    console.log('All data preloaded.');
+                    alert('All data preloaded.')
+                })
+                .catch(error => console.error('Error preloading data:', error));
+        }
+
+        // 使用预加载的数据播放动画
+        document.getElementById('preloadData').addEventListener('click', preloadData); // 启动预加载数据
+
+        function playAnimation() {
+            if (!keepAnimating || currentMomentIndex >= allData.length) {
+                console.log('Animation stopped or completed.');
+                keepAnimating = false;
+                currentMomentIndex = 0;
+                return;
+            }
+
+            const data = allData[currentMomentIndex];
+            displayResults(data);
+            updateTilesetStyle(data);
+            currentMomentIndex++;
+
+            if (keepAnimating) {
+                setTimeout(playAnimation, 5); // 根据需要调整延迟单位ms
+            }
+        }
+        
+        // 按照某一物理属性进行可视化
+        // 获取视图选择下拉菜单
+        const viewSelector2 = document.getElementById("viewSelector2");
+        // 添加视图选择事件监听器
+        viewSelector2.addEventListener('change', function () {
+            const selectedView = viewSelector2.value;
+            // 根据选择执行相应的操作或切换视图
+            switch (selectedView) {
+                case "无":
+                    break;
+                case "最大振动位移":
+                    // 按照最大振动位移颜色可视化
+                    tileset.style = new Cesium.Cesium3DTileStyle({
+                    color: {
+                      conditions: [
+                        ["${最大振动位移} ===0", "color('gray')"],
+                        
+                      ],
+                    },
+                  });
+                    break;
+                case "最大振动加速度":
+                    // 按照最大振动位移颜色可视化
+                    tileset.style = new Cesium.Cesium3DTileStyle({
+                    color: {
+                      conditions: [
+                        ["${最大振动加速度} ===0","color('gray')"],
+                        ["${最大振动加速度} !==0&&${最大振动加速度} >=100000000", "rgb(230,60,25,1)"],  //红色
+                        ["${最大振动加速度} !==0&&${最大振动加速度} >=70000000","rgb(230,230,0)"],      //黄色
+                        ["${最大振动加速度} !==0&&${最大振动加速度} >=0","rgb(35,230,35,1)"],           //绿色
+                      ],
+                    },
+                  });
+                    break;
+                default:
+                    break;
+            }
+        });
+          
+
+        //创建一个HTML叠加层以显示鼠标经过悬停时的特性名称
+        const nameOverlay = document.createElement("div");
+        viewer.container.appendChild(nameOverlay);
+        nameOverlay.className = "backdrop";
+        nameOverlay.style.display = "none";
+        nameOverlay.style.position = "absolute";
+        nameOverlay.style.bottom = "0";
+        nameOverlay.style.left = "0";
+        nameOverlay.style["pointer-events"] = "none";
+        nameOverlay.style.padding = "4px";
+        nameOverlay.style.backgroundColor = "black";
+
+        // 关于当前选定的特性的信息
+        const selected = {
+          feature: undefined,
+          originalColor: new Cesium.Color(),
+        };
+
+        // 创建一个实体对象，将保存当前选择的特性的信息以显示在信息框中
+        const selectedEntity = new Cesium.Entity();
+
+        // 获取默认的左击处理程序，以便在左击时未选择特性
+        const clickHandler = viewer.screenSpaceEventHandler.getInputAction(
+          Cesium.ScreenSpaceEventType.LEFT_CLICK
+        );
+
+        // 更新给定选中特性的'nameOverlay'，在给定的(屏幕)位置。
+        function updateNameOverlay(pickedFeature, position) {
+          if (!Cesium.defined(pickedFeature)) {
+            nameOverlay.style.display = "none";
+            return;
+          }
+          if (pickedFeature instanceof Cesium.Cesium3DTileFeature) {
+          // 若选定了特性，则显示其叠加层内容
+          nameOverlay.style.display = "block";
+          nameOverlay.style.bottom = `${viewer.canvas.clientHeight - position.y}px`;
+          nameOverlay.style.left = `${position.x}px`;
+          const name = pickedFeature.getProperty("name");
+          nameOverlay.textContent = name;
+          }else{
+          nameOverlay.style.display = "none";
+          }
+
+        }
+
+        // 创建HTML内容，用于在信息框中显示关于当前选定特性的信息
+        function createPickedFeatureDescription(pickedFeature) {
+            const name = pickedFeature.getProperty("name");
+            const imagePath1 = `Assets/images/振动位移频谱曲线(对比)/${name}.png`; // 照片的存放路径
+            const imagePath2 = `Assets/images/振动加速度频谱曲线/${name}.png`;
+
+            const description = `
+                <table class="cesium-infoBox-defaultTable">
+                    <tbody>
+                        <tr><th>唯一名称</th><td>${name}</td></tr>
+                        <tr><th>振动加速度(Max)</th><td>${pickedFeature.getProperty("最大振动加速度")/(10**9)}</td></tr>
+                        <tr><th>振动位移(Max)</th><td>${pickedFeature.getProperty("最大振动位移")}</td></tr>
+                        <tr><th>安装日期</th><td>2020年4月30日</td></tr>
+                        <tr><th>材料属性</th><td>C30</td></tr>
+                        <tr>
+                            <th colspan="2">振动位移频谱曲线</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <img 
+                                    src="${imagePath1}" 
+                                    alt="振动位移频谱曲线 of ${name}" 
+                                    style="max-width: 95%; height: auto; display: block; margin: 0 auto; border-radius: 5px;">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">振动加速度频谱曲线</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <img 
+                                    src="${imagePath2}" 
+                                    alt="振动加速度频谱曲线 of ${name}" 
+                                    style="max-width: 95%; height: auto; display: block; margin: 0 auto; border-radius: 5px;">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+          return description;
+        }
+        
+        // 确保Viewer完全加载,调整InfoBox iframe的高度使图片信息完整展示
+        viewer.scene.postRender.addEventListener(function() {
+            const iframe = viewer.infoBox.frame;
+            if (iframe) {
+                // 设置iframe的高度
+                iframe.style.height = "590px"; 
+            }
+        });
+
+
+
+        // 定义一个变量来跟踪当前鼠标选中的对象
+        let currentPickedFeature = undefined;
+
+        // 当鼠标移动时，只有在选中新的特征时才改变颜色
+        viewer.screenSpaceEventHandler.setInputAction(function onMouseMove(movement) {
+            // 拾取新的对象
+            const pickedFeature = viewer.scene.pick(movement.endPosition);
+            // 更新nameoverlay
+            updateNameOverlay(pickedFeature, movement.endPosition);
+            
+            // 如果没有选中任何特征或选中的特征是当前已经选中的特征，则不做任何操作
+            if (!Cesium.defined(pickedFeature) || pickedFeature === currentPickedFeature) {
+                return;
+            }
+            // 检查拾取的特征是否为Cesium3DTileFeature
+            if (!(pickedFeature instanceof Cesium.Cesium3DTileFeature)) {
+                return;
+            }
+            // 如果之前有特征被选中，恢复其原始颜色
+            if (Cesium.defined(currentPickedFeature)) {
+                currentPickedFeature.color = selected.originalColor;
+            }
+
+            // 更新当前选中的特征和颜色
+            currentPickedFeature = pickedFeature;
+            if (pickedFeature !== selected.feature) {
+                selected.originalColor = pickedFeature.color.clone();
+                pickedFeature.color = new Cesium.Color.fromBytes(0,60,255);
+            }
+        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+        // 当鼠标点击时，改变特征颜色为绿色并显示信息
+        viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(movement) {
+            const pickedFeature = viewer.scene.pick(movement.position);
+            if (!Cesium.defined(pickedFeature)) {
+                return;
+            }
+            // 检查拾取的特征是否为Cesium3DTileFeature
+            if (!(pickedFeature instanceof Cesium.Cesium3DTileFeature)) {
+                return;
+            }
+
+            // 如果之前有特征被选中，恢复其原始颜色
+            if (Cesium.defined(selected.feature)) {
+                selected.feature.color = selected.originalColor;
+            }
+
+            // 更新选中特征
+            selected.feature = pickedFeature;
+            selected.originalColor = pickedFeature.color.clone();
+
+            // 改变颜色为绿色，并显示信息
+            pickedFeature.color = new Cesium.Color.fromBytes(35,230,35);
+            currentPickedFeature = undefined; // 重置当前鼠标下的特征，以避免鼠标移出时改变颜色
+
+            // 设置选中实体的描述
+            viewer.selectedEntity = selectedEntity;
+            selectedEntity.description = createPickedFeatureDescription(pickedFeature);
+            selectedEntity.name = pickedFeature.getProperty("name");
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    
+
+        // 添加车辆动画效果
+        // 设置场景的时间范围
+        const start = Cesium.JulianDate.fromDate(new Date(2024, 6, 4, 15)); // 开始时间
+        const totalSeconds = 9; // 总时长，单位为秒
+        const stop = Cesium.JulianDate.addSeconds(start, totalSeconds, new Cesium.JulianDate()); // 结束时间
+        viewer.clock.startTime = start.clone(); // 时间轴的开始时间
+        viewer.clock.stopTime = stop.clone();   // 时间轴的结束时间
+        viewer.clock.currentTime = start.clone(); // 设置当前时间
+        // viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // 循环播放
+        viewer.clock.clockRange = Cesium.ClockRange.CLAMPED; // 播放结束后停止
+        viewer.timeline.zoomTo(start, stop); // 将时间轴缩放到开始和结束时间的范围
+
+        // 创建一个采样位置属性，用于定义车辆的路径
+        const animationPosition = new Cesium.SampledPositionProperty();
+        const startPosition = new Cesium.Cartesian3.fromDegrees( 121.574369,31.203144, 10.5); // 起始
+        const endPosition = new Cesium.Cartesian3.fromDegrees(  121.573835,31.203289, 10.5);  // 结束
+
+        // 创建一个速度向量属性，用于获取实体在任意时间的速度和方向
+        const velocityVectorProperty = new Cesium.VelocityVectorProperty(animationPosition, false);
+        const velocityVector = new Cesium.Cartesian3();
+
+        const numberOfSamples = 100; // 采样数量
+        for (let i = 0; i <= numberOfSamples; ++i) {
+        // 计算当前时间
+        const factor = i / numberOfSamples;
+        const time = Cesium.JulianDate.addSeconds(start, factor * totalSeconds, new Cesium.JulianDate());
+
+        // 使用非线性因子进行插值，模拟车辆加速
+        //const locationFactor = Math.pow(factor, 2);
+        //const location = Cesium.Cartesian3.lerp(startPosition, endPosition, locationFactor, new Cesium.Cartesian3());
+
+        const location = Cesium.Cartesian3.lerp(startPosition, endPosition, factor, new Cesium.Cartesian3());
+        animationPosition.addSample(time, location); // 添加采样点
+        }
+
+        // 更新速度标签的函数
+        function updateSpeedLabel(time, result) {
+        velocityVectorProperty.getValue(time, velocityVector);
+        const metersPerSecond = Cesium.Cartesian3.magnitude(velocityVector);
+        const kmPerHour = Math.round(metersPerSecond * 3.6); // 将速度单位转换为千米每小时
+
+        return `实时速度${kmPerHour} km/h`; // 返回格式化的速度字符串
+        }
+
+
+        // 添加车辆实体到场景中
+        const vehicleEntity = viewer.entities.add({
+        position: animationPosition, // 车辆的位置
+        orientation: new Cesium.VelocityOrientationProperty(animationPosition), // 根据速度向量自动设置车辆朝向
+        model: {
+            uri: "Assets/models/vehicle.glb", 
+            runAnimations: false, // 是否运行模型中的动画
+            color: new Cesium.Color(1.0, 1.0, 1.0, 1.0), 
+        },
+        /* label: {
+            text: new Cesium.CallbackProperty(updateSpeedLabel, false), // 速度标签的文本
+            font: "25px sans-serif", // 标签的字体
+            showBackground: true, // 是否显示背景
+            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0.0, 100.0), // 标签显示的距离条件
+            eyeOffset: new Cesium.Cartesian3(0, 3.5, 0), // 标签的视角偏移
+        }, */
+        });
+
+        
+        // 默认结束动画
+        viewer.clock.shouldAnimate = false;
+
+        document.getElementById('animationButton1').addEventListener('click', function() {
+            viewer.clock.shouldAnimate = true;
+        });
+        document.getElementById('animationButton2').addEventListener('click', function() {
+            viewer.clock.shouldAnimate = false;
+        });
+        document.getElementById('animationButton3').addEventListener('click', function() {
+            viewer.trackedEntity = vehicleEntity;
+            // 设置从特定方向观察车辆
+            vehicleEntity.viewFrom = new Cesium.Cartesian3(-10.0, 7.0, 4.0);
+        });
+        document.getElementById('animationButton4').addEventListener('click', function() {
+            viewer.trackedEntity = undefined;
+        });
+
+
+        // 定义函数用于将WGS-84坐标转换为GCJ-02坐标
+        function wgs84ToGcj02(lon, lat) {
+            var pi = 3.1415926535897932384626;
+            var a = 6378245.0;
+            var ee = 0.00669342162296594323;
+            var dLat = transformLat(lon - 105.0, lat - 35.0);
+            var dLon = transformLon(lon - 105.0, lat - 35.0);
+            var radLat = lat / 180.0 * pi;
+            var magic = Math.sin(radLat);
+            magic = 1 - ee * magic * magic;
+            var sqrtMagic = Math.sqrt(magic);
+            dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * pi);
+            dLon = (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * pi);
+            var mgLat = lat + dLat;
+            var mgLon = lon + dLon;
+            return [mgLon, mgLat];
+        }
+
+
+        // 定义函数用于将GCJ-02坐标转换为WGS-84坐标
+        function gcj02ToWgs84(lon, lat) {
+            var pi = 3.1415926535897932384626;  // π值
+            var a = 6378245.0;  // 长半轴
+            var ee = 0.00669342162296594323;  // 扁率
+            var dLat = transformLat(lon - 105.0, lat - 35.0);
+            var dLon = transformLon(lon - 105.0, lat - 35.0);
+            var radLat = lat / 180.0 * pi;
+            var magic = Math.sin(radLat);
+            magic = 1 - ee * magic * magic;
+            var sqrtMagic = Math.sqrt(magic);
+            dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * pi);
+            dLon = (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * pi);
+            var mgLat = lat + dLat;
+            var mgLon = lon + dLon;
+            return [lon * 2 - mgLon, lat * 2 - mgLat];
+        }
+
+        // 辅助函数，用于计算纬度调整值
+        function transformLat(x, y) {
+            var pi = 3.1415926535897932384626;
+            var ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+            ret += (20.0 * Math.sin(6.0 * x * pi) + 20.0 * Math.sin(2.0 * x * pi)) * 2.0 / 3.0;
+            ret += (20.0 * Math.sin(y * pi) + 40.0 * Math.sin(y / 3.0 * pi)) * 2.0 / 3.0;
+            ret += (160.0 * Math.sin(y / 12.0 * pi) + 320 * Math.sin(y * pi / 30.0)) * 2.0 / 3.0;
+            return ret;
+        }
+
+        // 辅助函数，用于计算经度调整值
+        function transformLon(x, y) {
+            var pi = 3.1415926535897932384626;
+            var ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+            ret += (20.0 * Math.sin(6.0 * x * pi) + 20.0 * Math.sin(2.0 * x * pi)) * 2.0 / 3.0;
+            ret += (20.0 * Math.sin(x * pi) + 40.0 * Math.sin(x / 3.0 * pi)) * 2.0 / 3.0;
+            ret += (150.0 * Math.sin(x / 12.0 * pi) + 300.0 * Math.sin(x / 30.0 * pi)) * 2.0 / 3.0;
+            return ret;
+        }
+
+
+        var startWGS84 = { latitude: 31.200627, longitude: 121.581289 }; // 起始点的WGS-84坐标
+        var endWGS84 = { latitude: 31.203122, longitude: 121.574265 }; // 目的地的WGS-84坐标
+
+        var [startLon, startLat] = wgs84ToGcj02(startWGS84.longitude, startWGS84.latitude);
+        var [endLon, endLat] = wgs84ToGcj02(endWGS84.longitude, endWGS84.latitude);
+
+        var startGCJ = { latitude: startLat, longitude: startLon };
+        var endGCJ = { latitude: endLat, longitude: endLon };
+
+        
+        // 定义一个规划路线的函数
+        function planRoute(start, end) {
+            const key = '79401f66f1ad0b1bb12a241f00823706';
+            const url = `https://restapi.amap.com/v3/direction/driving?origin=${start.longitude},${start.latitude}&destination=${end.longitude},${end.latitude}&key=${key}`;
+            // 使用fetch API调用高德地图API
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === '1' && data.route.paths.length > 0) {
+                        var path = data.route.paths[0].steps;
+                        drawRoute(path); // 绘制路线显示导航信息
+                        console.log('路径规划成功:', data);
+                    } else {
+                        console.error('路径规划失败:', data.info);
+                    }
+                })
+                .catch(error => {
+                    console.error('API调用失败:', error);
+                });
+        }
+        
+
+        // 定义一个函数用于绘制路线
+        function drawRoute(steps) {
+        var positions = [];
+        var stepDescriptions = '<h1>导航路线:</h1><ul>';  // 初始化HTML描述信息
+        steps.forEach(step => {
+            // 解析每个步骤的polyline
+            step.polyline.split(';').forEach(coord => {
+                var [lon, lat] = coord.split(',');
+                // 添加经纬度坐标到位置数组
+                [lon, lat] = gcj02ToWgs84(parseFloat(lon), parseFloat(lat));
+                positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, 1)); // 增加高度1米，防止遮挡
+            });
+            // 添加步骤描述到HTML字符串，并添加Unicode符号
+            const directionIcon = getDirectionIcon(step.instruction);
+            stepDescriptions += `${directionIcon}<li> <h2>${step.instruction}</h2></li>`;
+        });
+        stepDescriptions += '<br>';
+        // 在Cesium视图中添加一条多段线实体，设置样式和位置
+        var orangeOutlined = viewer.entities.add({
+            name: '路线',
+            polyline: {
+                positions: positions,
+                width: 5,
+                material: new Cesium.PolylineOutlineMaterialProperty({
+                    color: Cesium.Color.ORANGE,
+                    outlineWidth: 2,
+                    outlineColor: Cesium.Color.BLACK
+                }),
+                clampToGround: false  // 如果需要，可以设置为true以贴合地面
+            },
+            description: stepDescriptions  // 设置描述属性，点击时显示
+        });
+
+            viewer.zoomTo(orangeOutlined);
+            viewer.selectedEntity = new Cesium.Entity({
+                        description: stepDescriptions,
+                        name:'路线'
+                    });
+        }
+        // 辅助函数用于根据导航指令返回相应的图标
+        function getDirectionIcon(instruction) {
+            if (instruction.includes("左转")) {
+                return '<img src="Assets/images/turn-left.png" alt="左转" style="width:40px; height:40px;">';
+            } else if (instruction.includes("右转")) {
+                return '<img src="Assets/images/turn-right.png" alt="右转" style="width:40px; height:40px;">';
+            }
+            return '';  // 如果没有特定的方向指令则不返回符号
+        }
+        // 使用转换后的GCJ-02坐标调用planRoute函数
+        //planRoute(startGCJ, endGCJ);
+        document.getElementById('navigationButton').addEventListener('click', function() {
+            planRoute(startGCJ, endGCJ);
+        });
+        
+        
+    };
+      if (typeof Cesium !== "undefined") {
+        window.startupCalled = true;
+        window.startup(Cesium).catch((error) => {
+          "use strict";
+          console.error(error);
+        });
+        Sandcastle.finishedLoading();
+      }
+    </script>
+</body>
+</html>
