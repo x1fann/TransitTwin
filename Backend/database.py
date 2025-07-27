@@ -1,7 +1,6 @@
 import pymysql
 import pymysql.cursors
 
-# 数据库连接配置
 db_config = {
     'host': '127.0.0.1',
     'user': 'root',
@@ -12,18 +11,9 @@ db_config = {
 }
 
 def get_connection():
-    """
-    创建并返回一个新的数据库连接。
-    """
     return pymysql.connect(**db_config)
 
 def fetch_data(query, params):
-    """
-    执行查询并返回结果。
-    :param query: SQL 查询语句
-    :param params: 查询参数
-    :return: 查询结果
-    """
     connection = get_connection()
     try:
         with connection.cursor() as cursor:

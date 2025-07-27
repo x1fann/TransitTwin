@@ -25,18 +25,18 @@
       }
       .toolbar .header {
         font-weight: bold;
-        font-size: 14px;  /* 标题文字大小 */
+        font-size: 14px; 
         color:rgba(255, 255, 255, 1)
       }
       .cesium-infoBox {
-        height: 80vh;  /* 设置InfoBox高度 */ 
+        height: 80vh; 
         width: 30vw;
         z-index: 2;
         max-width: 500px;
       }
       .cesium-infoBox-defaultTable td {
-        text-align: center; /* 内容水平居中 */
-        vertical-align: middle; /* 内容垂直居中 */
+        text-align: center; 
+        vertical-align: middle;
         padding: 8px;
         border: 1px solid #ddd;
       }
@@ -44,9 +44,9 @@
         padding: 5px;
       }
       .logo {
-        width: auto; /* 控制图片的宽度 */
+        width: auto; 
         height: 30px; 
-        margin-right: 5px; /* 图片与系统名称之间的间距 */
+        margin-right: 5px; 
       }
       #systemName {
         display: flex;
@@ -57,7 +57,7 @@
         border-radius: 4px;
      }
       input {
-       width: 110px; /* 输入框宽度 */
+       width: 110px;
        padding: 3px;
     }
     </style>
@@ -149,8 +149,8 @@
                 </tr>
                 <tr>
                     <td>模型选择
-                        <button id="alertButton1" class="cesium-button">NNs</button> <!-- 神经网络模型预测 -->
-                        <button id="alertButton2" class="cesium-button">SVM</button> <!-- SVM模型预测 -->
+                        <button id="alertButton1" class="cesium-button">NNs</button>
+                        <button id="alertButton2" class="cesium-button">SVM</button>
                     </td>
                 </tr>
             </tbody>
@@ -210,15 +210,15 @@
         
         var viewer = new Cesium.Viewer("cesiumContainer",{
           selectionIndicator: true,
-          infobox: true, // 使用ceiusm信息窗
-          navigationHelpButton: false,   // navigation help button
-          homeButton: false,             // home button
-          geocoder: false,               // geocoder (search)
-          sceneModePicker: false,        // scene mode picker (2D/3D toggle)
-          baseLayerPicker: false,        // base layer picker
+          infobox: true,
+          navigationHelpButton: false,
+          homeButton: false,
+          geocoder: false,
+          sceneModePicker: false,
+          baseLayerPicker: false,
           fullscreenButton: false,  
-          animation: false,  // 左下角时钟动画控件
-          //timeline: false,             // timeline
+          animation: false,
+          //timeline: false,
         });
         viewer.scene.globe.depthTestAgainstTerrain = true; // 场景考虑地形遮挡
         // viewer.scene.debugShowFramesPerSecond = true; // 显示帧率
@@ -265,17 +265,17 @@
         }
 
         // 添加道路和轨道标记
-        /* const roadMark = createPin("道路 mark", 31.204065, 121.583123, 2, "道路", Cesium.Color.ROYALBLUE);
-        const trackMark = createPin("轨道 mark", 31.203551, 121.581790, 8, "轨道", Cesium.Color.BLACK); */
+        // const roadMark = createPin("道路 mark", 31.204065, 121.583123, 2, "道路", Cesium.Color.ROYALBLUE);
+        // const trackMark = createPin("轨道 mark", 31.203551, 121.581790, 8, "轨道", Cesium.Color.BLACK);
 
     
-        // 添加显示当前鼠标位置的经纬度、海拔功能
+        // 显示当前鼠标位置的经纬度、海拔功能
         var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
         var updateRate = 100; // 更新频率为100ms
         var lastUpdate = Date.now();
 
         handler.setInputAction(function (movement) {
-            if (Date.now() - lastUpdate < updateRate) return; // 控制更新频率
+            if (Date.now() - lastUpdate < updateRate) return; 
             lastUpdate = Date.now();
 
             var cartesian = viewer.scene.pickPosition(movement.endPosition);
@@ -297,7 +297,7 @@
         }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
 
-        // 添加展示实时天气功能，使用高德天气API
+        // 展示实时天气，使用高德天气API
         function getWeatherData(cityCode) {
             const apiKey = '79401f66f1ad0b1bb12a241f00823706'; // 高德开放平台申请的key
             fetch(`https://restapi.amap.com/v3/weather/weatherInfo?city=${cityCode}&key=${apiKey}`)
@@ -311,8 +311,7 @@
                     if (data.status === '0' && data.info === 'INVALID_USER_KEY') {
                         console.error('The provided API key is invalid.');
                     } else {
-                        console.log(data); // Print the fetched weather data
-                        // Convert JSON data to JavaScript object
+                        console.log(data); 
                         var weatherData = data.lives[0];
                         console.log(weatherData.province);
                         var weatherDisplay = document.getElementById("weatherDisplay");
@@ -334,11 +333,11 @@
         getWeatherData('310115');
 
 
-        // 添加视图切换功能
+        // 视图切换
         // 获取视图选择下拉菜单
         const viewSelector1 = document.getElementById("viewSelector1");
 
-        // 定义函数执行视图切换
+        // 视图切换
         function flyToView(latitude, longitude, altitude, headingDegrees, pitchDegrees) {
             viewer.scene.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude),
@@ -352,7 +351,6 @@
         // 添加视图选择事件监听器
         viewSelector1.addEventListener('change', function () {
             const selectedView = viewSelector1.value;
-            // 根据选择切换视图
             switch (selectedView) {
                 case "轨道结构视图":
                     flyToView(31.2031305, 121.574212, 30, 20, -75);
@@ -399,7 +397,7 @@
         const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2358510);
         viewer.scene.primitives.add(tileset);
 
-        // 定义函数来移动指定的3DTiles模型
+        // 移动指定的3DTiles模型
         function moveTileset(tileset,longitude,latitude,height ){
             if(!tileset) return;
             // 模型外包围盒，center:模型中心点,radius:包围盒半径
@@ -694,9 +692,6 @@
 
         // 实现可视化动画功能
         // 可视化动画中获取的时刻值
-        /* const moments = ['1.5006562','1.6141562','1.7165313','1.8331562','1.9415313','2.0001562','2.1080313','2.2026563','2.3085313','2.4066563',
-                         '2.5492814','2.6051562','2.7110312','2.8126562','2.9261563','3.0156562','3.1766562','3.2660313','3.3535314','3.4710312',
-                         '3.5767813','3.7105312','3.8361564','4.0001564'];// 来源于数据集的时刻值 */
         const moments = ['1.5006562','1.7165313','1.8331562','2.0001562','2.1080313','2.2026563','2.3085313','2.4066563',
                          '2.5492814','2.7110312','2.9261563','3.1766562','3.3535314',
                          '3.5767813','3.8361564','4.0001564'];
@@ -1040,7 +1035,7 @@
         });
 
 
-        // 定义函数用于将WGS-84坐标转换为GCJ-02坐标
+        // 将WGS-84坐标转换为GCJ-02坐标
         function wgs84ToGcj02(lon, lat) {
             var pi = 3.1415926535897932384626;
             var a = 6378245.0;
@@ -1059,7 +1054,7 @@
         }
 
 
-        // 定义函数用于将GCJ-02坐标转换为WGS-84坐标
+        // 将GCJ-02坐标转换为WGS-84坐标
         function gcj02ToWgs84(lon, lat) {
             var pi = 3.1415926535897932384626;  // π值
             var a = 6378245.0;  // 长半轴
@@ -1077,7 +1072,7 @@
             return [lon * 2 - mgLon, lat * 2 - mgLat];
         }
 
-        // 辅助函数，用于计算纬度调整值
+        // 辅助函数用于计算纬度调整值
         function transformLat(x, y) {
             var pi = 3.1415926535897932384626;
             var ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
@@ -1087,7 +1082,7 @@
             return ret;
         }
 
-        // 辅助函数，用于计算经度调整值
+        // 辅助函数用于计算经度调整值
         function transformLon(x, y) {
             var pi = 3.1415926535897932384626;
             var ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
@@ -1108,7 +1103,7 @@
         var endGCJ = { latitude: endLat, longitude: endLon };
 
         
-        // 定义一个规划路线的函数
+        // 定义路线规划函数
         function planRoute(start, end) {
             const key = '79401f66f1ad0b1bb12a241f00823706';
             const url = `https://restapi.amap.com/v3/direction/driving?origin=${start.longitude},${start.latitude}&destination=${end.longitude},${end.latitude}&key=${key}`;
@@ -1130,7 +1125,7 @@
         }
         
 
-        // 定义一个函数用于绘制路线
+        // 定义函数绘制路线
         function drawRoute(steps) {
         var positions = [];
         var stepDescriptions = '<h1>导航路线:</h1><ul>';  // 初始化HTML描述信息

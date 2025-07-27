@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from database import fetch_data
 import subprocess
 
-# 创建路由蓝图
 routes = Blueprint('routes', __name__)
 
 @routes.route('/get-data-by-moment', methods=['GET'])
@@ -20,9 +19,6 @@ def get_data_by_name():
     return jsonify(result)
 
 def execute_script(script_path):
-    """
-    通用函数，执行 Python 脚本。
-    """
     try:
         process = subprocess.Popen(
             ['python', script_path],
